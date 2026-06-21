@@ -1446,29 +1446,23 @@
 
     function isPeaceSign(landmarks) {
       const wrist = landmarks[0];
+      const dist = (p1, p2) => Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
       
-      // Extended fingers: distance from wrist to tip is larger than from wrist to pip joint
-      const indexTip = landmarks[8];
-      const indexPip = landmarks[6];
-      const indexExtended = getDistance(indexTip, wrist) > getDistance(indexPip, wrist);
+      // Method 1: 2D Distance from wrist (Rotation invariant)
+      const indexExtendedDist = dist(landmarks[8], wrist) > dist(landmarks[6], wrist);
+      const middleExtendedDist = dist(landmarks[12], wrist) > dist(landmarks[10], wrist);
+      const ringFoldedDist = dist(landmarks[16], wrist) < dist(landmarks[14], wrist) * 1.1;
+      const pinkyFoldedDist = dist(landmarks[20], wrist) < dist(landmarks[18], wrist) * 1.1;
+      const isPeaceDist = indexExtendedDist && middleExtendedDist && ringFoldedDist && pinkyFoldedDist;
 
-      const middleTip = landmarks[12];
-      const middlePip = landmarks[10];
-      const middleExtended = getDistance(middleTip, wrist) > getDistance(middlePip, wrist);
+      // Method 2: Y-axis comparison (Optimized for upright hand - very standard for selfies)
+      const indexExtendedY = landmarks[8].y < landmarks[6].y && landmarks[6].y < landmarks[5].y;
+      const middleExtendedY = landmarks[12].y < landmarks[10].y && landmarks[10].y < landmarks[9].y;
+      const ringFoldedY = landmarks[16].y > landmarks[14].y;
+      const pinkyFoldedY = landmarks[20].y > landmarks[18].y;
+      const isPeaceY = indexExtendedY && middleExtendedY && ringFoldedY && pinkyFoldedY;
 
-      // Folded fingers: distance from wrist to tip is smaller than from wrist to pip joint
-      const ringTip = landmarks[16];
-      const ringPip = landmarks[14];
-      const ringFolded = getDistance(ringTip, wrist) < getDistance(ringPip, wrist);
-
-      const pinkyTip = landmarks[20];
-      const pinkyPip = landmarks[18];
-      const pinkyFolded = getDistance(pinkyTip, wrist) < getDistance(pinkyPip, wrist);
-
-      // In a clear peace sign, index and middle are straight/extended, ring and pinky are curled.
-      // Additionally, make sure the index and middle finger tips are slightly apart or vertically higher
-      // to avoid triggering accidentally on a closed fist.
-      return indexExtended && middleExtended && ringFolded && pinkyFolded;
+      return isPeaceDist || isPeaceY;
     }
 
     function processGestureClassification() {
