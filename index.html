@@ -1865,10 +1865,28 @@
           ctx.scale(-1, 1);
         }
 
-        // 1. Draw raw video feed onto canvas
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        // 1. Draw raw video feed onto canvas (blurred if gesture active, normal otherwise)
+        if (isPeaceSignActive) {
+          if ('filter' in ctx) {
+            ctx.filter = 'blur(25px)';
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            ctx.filter = 'none';
+          } else {
+            // Fallback for browsers lacking context.filter support (e.g. older iOS/Safari)
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 32;
+            tempCanvas.height = 18;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(video, 0, 0, 32, 18);
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'medium';
+            ctx.drawImage(tempCanvas, 0, 0, 32, 18, 0, 0, canvas.width, canvas.height);
+          }
+        } else {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        }
 
-        // 2. Process face mesh detection and draw AI sensor blur
+        // 2. Process face mesh detection and calculate coordinates for HUD overlays
         let facePoints = [];
         let faceMinX = Infinity, faceMinY = Infinity, faceMaxX = -Infinity, faceMaxY = -Infinity;
 
@@ -1892,11 +1910,6 @@
 
             return { x, y };
           });
-
-          // Apply blur on face contour if ✌️ is active
-          if (isPeaceSignActive && facePoints.length > 0) {
-            drawBlurredFace(ctx, facePoints, 28);
-          }
         }
 
         // 3. Save snapshot canvas image for final photo download (clean: has blur but NO HUD overlay lines)
