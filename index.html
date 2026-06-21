@@ -1726,8 +1726,8 @@
         context.clip();
 
         context.filter = `blur(${radius}px)`;
-        // Redraw only the clipped area from the canvas itself (or video)
-        context.drawImage(canvas, 0, 0);
+        // Redraw only the clipped area from the video stream
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
         context.restore();
       } else {
         // Fallback pixelation effect
